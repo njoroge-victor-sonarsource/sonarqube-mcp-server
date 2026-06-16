@@ -97,6 +97,10 @@ public class SchemaToolBuilder {
     return this;
   }
 
+  public SchemaToolBuilder addStringArrayProperty(String propertyName, String description) {
+    return addArrayProperty(propertyName, STRING_TYPE, description);
+  }
+
   public SchemaToolBuilder addArrayProperty(String propertyName, String itemsType, String description) {
     var content = Map.of(TYPE_PROPERTY_NAME, ARRAY_TYPE, DESCRIPTION_KEY_NAME, description, ITEMS_PROPERTY_NAME, Map.of(TYPE_PROPERTY_NAME, itemsType));
     properties.put(propertyName, content);

@@ -95,6 +95,8 @@ public class McpServerLaunchConfiguration {
 
   private static final String SONARQUBE_MCP_IN_CONTAINER = "SONARQUBE_MCP_IN_CONTAINER";
 
+  private static final String FALSE_STRING = "false";
+
   private final Path storagePath;
   private final String hostMachineAddress;
   private final String sonarqubeUrl;
@@ -166,7 +168,7 @@ public class McpServerLaunchConfiguration {
       sonarqubeUrlFromEnv = sonarqubeCloudUrl;
     }
 
-    var forceSonarQubeCloud = Boolean.parseBoolean(getValueViaEnvOrPropertyOrDefault(environment, SONARQUBE_IS_CLOUD, "false"));
+    var forceSonarQubeCloud = Boolean.parseBoolean(getValueViaEnvOrPropertyOrDefault(environment, SONARQUBE_IS_CLOUD, FALSE_STRING));
     validateStdioConfiguration(isHttpEnabled, sonarqubeUrlFromEnv, this.sonarqubeOrg);
     this.isSonarQubeCloud = resolveSonarQubeCloud(forceSonarQubeCloud, this.sonarqubeOrg, sonarqubeUrlFromEnv);
     this.sonarqubeUrl = resolveUrl(this.isSonarQubeCloud, sonarqubeUrlFromEnv);
@@ -183,7 +185,7 @@ public class McpServerLaunchConfiguration {
 
     this.appVersion = fetchAppVersion();
     this.userAgent = APP_NAME + " " + appVersion;
-    this.isTelemetryEnabled = !Boolean.parseBoolean(getValueViaEnvOrPropertyOrDefault(environment, TELEMETRY_DISABLED, "false"));
+    this.isTelemetryEnabled = !Boolean.parseBoolean(getValueViaEnvOrPropertyOrDefault(environment, TELEMETRY_DISABLED, FALSE_STRING));
     
     this.httpPort = parseHttpPortValue(getValueViaEnvOrPropertyOrDefault(environment, SONARQUBE_HTTP_PORT, "8080"));
     this.httpHost = getValueViaEnvOrPropertyOrDefault(environment, SONARQUBE_HTTP_HOST, "127.0.0.1");
@@ -205,14 +207,14 @@ public class McpServerLaunchConfiguration {
     var toolsetsStr = getValueViaEnvOrPropertyOrDefault(environment, SONARQUBE_TOOLSETS, null);
     this.enabledToolsets = ToolCategory.parseCategories(toolsetsStr);
 
-    this.isReadOnlyMode = Boolean.parseBoolean(getValueViaEnvOrPropertyOrDefault(environment, SONARQUBE_READ_ONLY, "false"));
+    this.isReadOnlyMode = Boolean.parseBoolean(getValueViaEnvOrPropertyOrDefault(environment, SONARQUBE_READ_ONLY, FALSE_STRING));
 
     this.sonarqubeProjectKey = getValueViaEnvOrPropertyOrDefault(environment, SONARQUBE_PROJECT_KEY, null);
 
     this.workspacePath = resolveWorkspacePath();
 
-    this.isFileLoggingDisabled = Boolean.parseBoolean(getValueViaEnvOrPropertyOrDefault(environment, SONARQUBE_LOG_TO_FILE_DISABLED, "false"));
-    this.isRunningInContainer = Boolean.parseBoolean(getValueViaEnvOrPropertyOrDefault(environment, SONARQUBE_MCP_IN_CONTAINER, "false"));
+    this.isFileLoggingDisabled = Boolean.parseBoolean(getValueViaEnvOrPropertyOrDefault(environment, SONARQUBE_LOG_TO_FILE_DISABLED, FALSE_STRING));
+    this.isRunningInContainer = Boolean.parseBoolean(getValueViaEnvOrPropertyOrDefault(environment, SONARQUBE_MCP_IN_CONTAINER, FALSE_STRING));
 
     this.mcpServerId = UUID.randomUUID().toString();
   }

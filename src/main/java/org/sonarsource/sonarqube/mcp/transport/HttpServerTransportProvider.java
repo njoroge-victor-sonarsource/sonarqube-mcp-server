@@ -147,7 +147,7 @@ public class HttpServerTransportProvider {
       })
       .build();
 
-    var protocol = httpsEnabled ? "https" : "http";
+    var protocol = getProtocol();
     LOG.info("Created " + protocol.toUpperCase(Locale.getDefault()) + " transport provider for "
       + protocol + "://" + host + ":" + port + MCP_ENDPOINT + " with authentication: " + authMode);
 
@@ -246,7 +246,7 @@ public class HttpServerTransportProvider {
     CompletableFuture.runAsync(() -> {
       try {
         httpServer.start();
-        var protocol = httpsEnabled ? "https" : "http";
+        var protocol = getProtocol();
         LOG.info("MCP " + protocol.toUpperCase(Locale.getDefault()) + " server started successfully on " + protocol + "://" + host + ":" + port + MCP_ENDPOINT);
         startupFuture.complete(null);
         httpServer.join();
@@ -287,8 +287,12 @@ public class HttpServerTransportProvider {
   }
 
   public String getServerUrl() {
-    var protocol = httpsEnabled ? "https" : "http";
+    var protocol = getProtocol();
     return protocol + "://" + host + ":" + port + MCP_ENDPOINT;
+  }
+
+  private String getProtocol() {
+    return httpsEnabled ? "https" : "http";
   }
 
   /**

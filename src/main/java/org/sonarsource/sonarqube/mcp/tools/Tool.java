@@ -44,10 +44,11 @@ public abstract class Tool {
     return category;
   }
 
-  /**
+  /***
    * Returns whether this tool should be visible and callable for the given request context.
    * The default implementation always returns {@code true}. Tools that require per-request
    * entitlement checks (e.g. feature-flag gating) can override this method.
+   * @param ctx the transport context for the current request, available for subclasses to inspect
    */
   public boolean isEnabledFor(McpTransportContext ctx) {
     return true;
