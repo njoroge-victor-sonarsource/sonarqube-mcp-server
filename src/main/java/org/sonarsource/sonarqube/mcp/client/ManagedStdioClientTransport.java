@@ -155,12 +155,7 @@ public class ManagedStdioClientTransport implements McpClientTransport {
       try (BufferedReader processReader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
         String line;
         while (!isClosing && (line = processReader.readLine()) != null) {
-          try {
-            McpSchema.JSONRPCMessage message = McpSchema.deserializeJsonRpcMessage(mapper, line);
-            if (!inboundSink.tryEmitNext(message).isSuccess()) {
-              break;
-            }
-          } catch (Exception e) {
+          if (!processInboundLine(line)) {
             break;
           }
         }
@@ -173,6 +168,15 @@ public class ManagedStdioClientTransport implements McpClientTransport {
         inboundSink.tryEmitComplete();
       }
     });
+  }
+
+  private boolean processInboundLine(String line) {
+    try {
+      McpSchema.JSONRPCMessage message = McpSchema.deserializeJsonRpcMessage(mapper, line);
+      return inboundSink.tryEmitNext(message).isSuccess();
+    } catch (Exception e) {
+      return false;
+    }
   }
 
   private void startOutboundProcessing() {
