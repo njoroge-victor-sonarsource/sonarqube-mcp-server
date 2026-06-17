@@ -17,10 +17,10 @@
 package org.sonarsource.sonarqube.mcp.serverapi.exception;
 
 
-public class ServerInternalErrorException extends ServerApiException {
+public class ServerInternalErrorException extends SonarMcpException {
 
   public ServerInternalErrorException(String message) {
-    super(message);
+    super("SonarQube answered with " + message);
   }
 
 }

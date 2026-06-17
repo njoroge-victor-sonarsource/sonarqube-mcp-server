@@ -32,7 +32,7 @@ public class AnalyticsClient {
 
   private static final String GESSIE_ENDPOINT = "https://events.sonardata.io/mcp";
   // Not a secret
-  private static final String API_KEY = "1b8EU3XmRk5MKpIhqzKoD54LzfplrL2X1RLkLzLA";
+  private static final String GESSIE_HEADER_VALUE = "1b8EU3XmRk5MKpIhqzKoD54LzfplrL2X1RLkLzLA";
   private static final String SOURCE_DOMAIN = "MCP";
   private static final int MAX_RETRIES = 2;
   private static final long RETRY_BASE_DELAY_MS = 2000L;
@@ -106,7 +106,7 @@ public class AnalyticsClient {
   }
 
   public static String resolveApiKey() {
-    return System.getProperty(PROPERTY_ANALYTICS_API_KEY, API_KEY);
+    return System.getProperty(PROPERTY_ANALYTICS_API_KEY, GESSIE_HEADER_VALUE);
   }
 
 }
