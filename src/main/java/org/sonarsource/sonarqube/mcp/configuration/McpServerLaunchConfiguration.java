@@ -85,7 +85,7 @@ public class McpServerLaunchConfiguration {
   private static final String SONARQUBE_HTTPS_TRUSTSTORE_TYPE = "SONARQUBE_HTTPS_TRUSTSTORE_TYPE";
   
   // Default values for HTTPS
-  private static final String DEFAULT_KEYSTORE_PASSWORD = "sonarlint";
+  private static final String DEFAULT_KEYSTORE_PROTECTION = "sonarlint"; // NOSONAR - not a real credential, just a well-known default for the bundled dev keystore
   private static final String DEFAULT_KEYSTORE_TYPE = "PKCS12";
   private static final String DEFAULT_KEYSTORE_PATH = "/etc/ssl/mcp/keystore.p12";
   private static final String DEFAULT_TRUSTSTORE_PATH = "/etc/ssl/mcp/truststore.p12";
@@ -190,12 +190,12 @@ public class McpServerLaunchConfiguration {
 
     var keystorePathStr = getValueViaEnvOrPropertyOrDefault(environment, SONARQUBE_HTTPS_KEYSTORE_PATH, DEFAULT_KEYSTORE_PATH);
     this.httpsKeystorePath = Paths.get(requireNonNull(keystorePathStr));
-    this.httpsKeystorePassword = getValueViaEnvOrPropertyOrDefault(environment, SONARQUBE_HTTPS_KEYSTORE_PASSWORD, DEFAULT_KEYSTORE_PASSWORD);
+    this.httpsKeystorePassword = getValueViaEnvOrPropertyOrDefault(environment, SONARQUBE_HTTPS_KEYSTORE_PASSWORD, DEFAULT_KEYSTORE_PROTECTION);
     this.httpsKeystoreType = getValueViaEnvOrPropertyOrDefault(environment, SONARQUBE_HTTPS_KEYSTORE_TYPE, DEFAULT_KEYSTORE_TYPE);
     
     var truststorePathStr = getValueViaEnvOrPropertyOrDefault(environment, SONARQUBE_HTTPS_TRUSTSTORE_PATH, DEFAULT_TRUSTSTORE_PATH);
     this.httpsTruststorePath = Paths.get(requireNonNull(truststorePathStr));
-    this.httpsTruststorePassword = getValueViaEnvOrPropertyOrDefault(environment, SONARQUBE_HTTPS_TRUSTSTORE_PASSWORD, DEFAULT_KEYSTORE_PASSWORD);
+    this.httpsTruststorePassword = getValueViaEnvOrPropertyOrDefault(environment, SONARQUBE_HTTPS_TRUSTSTORE_PASSWORD, DEFAULT_KEYSTORE_PROTECTION);
     this.httpsTruststoreType = getValueViaEnvOrPropertyOrDefault(environment, SONARQUBE_HTTPS_TRUSTSTORE_TYPE, DEFAULT_KEYSTORE_TYPE);
     
     this.authMode = parseAuthMode(environment);

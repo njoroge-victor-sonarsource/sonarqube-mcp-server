@@ -16,10 +16,10 @@
  */
 package org.sonarsource.sonarqube.mcp.serverapi.exception;
 
-public class UnauthorizedException extends ServerApiException {
+public class UnauthorizedException extends RuntimeException {
 
   public UnauthorizedException(String message) {
-    super(message);
+    super("SonarQube answered with " + message);
   }
 
 }

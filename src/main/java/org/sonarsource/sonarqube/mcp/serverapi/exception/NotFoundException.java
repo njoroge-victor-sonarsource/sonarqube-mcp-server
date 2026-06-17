@@ -17,10 +17,10 @@
 package org.sonarsource.sonarqube.mcp.serverapi.exception;
 
 
-public class NotFoundException extends ServerApiException {
+public class NotFoundException extends SonarMcpException {
 
   public NotFoundException(String msg) {
-    super(msg);
+    super("SonarQube answered with " + msg);
   }
 
 }
