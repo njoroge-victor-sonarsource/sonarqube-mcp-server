@@ -91,6 +91,8 @@ import org.sonarsource.sonarqube.mcp.tools.webhooks.CreateWebhookTool;
 import org.sonarsource.sonarqube.mcp.tools.webhooks.ListWebhooksTool;
 import org.sonarsource.sonarqube.mcp.tools.pullrequests.ListPullRequestsTool;
 import org.sonarsource.sonarqube.mcp.transport.HttpServerTransportProvider;
+import org.sonarsource.sonarqube.mcp.transport.HttpsConfiguration;
+import org.sonarsource.sonarqube.mcp.transport.ServerConfiguration;
 import org.sonarsource.sonarqube.mcp.transport.StdioServerTransportProvider;
 
 public class SonarQubeMcpServer implements ServerApiProvider {
@@ -155,22 +157,28 @@ public class SonarQubeMcpServer implements ServerApiProvider {
     var authConfig = mcpConfiguration.getAuthMode();
 
     if (mcpConfiguration.isHttpEnabled() && authConfig != null) {
-      this.httpServerManager = new HttpServerTransportProvider(
+      var serverConfig = new ServerConfiguration(
         mcpConfiguration.getHttpPort(),
         mcpConfiguration.getHttpHost(),
-        authConfig,
-        mcpConfiguration.isSonarQubeCloud(),
-        mcpConfiguration.getSonarqubeOrg(),
+        mcpConfiguration.getHttpAllowedOrigins(),
+        mcpConfiguration.getAppVersion(),
+        mcpConfiguration.isRunningInContainer()
+      );
+      var httpsConfig = new HttpsConfiguration(
         mcpConfiguration.isHttpsEnabled(),
         mcpConfiguration.getHttpsKeystorePath(),
         mcpConfiguration.getHttpsKeystorePassword(),
         mcpConfiguration.getHttpsKeystoreType(),
         mcpConfiguration.getHttpsTruststorePath(),
         mcpConfiguration.getHttpsTruststorePassword(),
-        mcpConfiguration.getHttpsTruststoreType(),
-        mcpConfiguration.getHttpAllowedOrigins(),
-        mcpConfiguration.getAppVersion(),
-        mcpConfiguration.isRunningInContainer()
+        mcpConfiguration.getHttpsTruststoreType()
+      );
+      this.httpServerManager = new HttpServerTransportProvider(
+        serverConfig,
+        authConfig,
+        mcpConfiguration.isSonarQubeCloud(),
+        mcpConfiguration.getSonarqubeOrg(),
+        httpsConfig
       );
       this.transportProvider = null;
     } else {

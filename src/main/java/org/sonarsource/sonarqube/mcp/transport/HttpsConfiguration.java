@@ -14,12 +14,20 @@
  * You should have received a copy of the Sonar Source-Available License
  * along with this program; if not, see https://sonarsource.com/license/ssal/
  */
-package org.sonarsource.sonarqube.mcp.serverapi.exception;
+package org.sonarsource.sonarqube.mcp.transport;
 
-public class ForbiddenException extends RuntimeException {
+import java.nio.file.Path;
 
-  public ForbiddenException(String message) {
-    super("SonarQube answered with " + message);
-  }
-
+/**
+ * Groups HTTPS/SSL configuration parameters for the HTTP server transport.
+ */
+public record HttpsConfiguration(
+  boolean enabled,
+  Path keystorePath,
+  String keystorePassword,
+  String keystoreType,
+  Path truststorePath,
+  String truststorePassword,
+  String truststoreType
+) {
 }

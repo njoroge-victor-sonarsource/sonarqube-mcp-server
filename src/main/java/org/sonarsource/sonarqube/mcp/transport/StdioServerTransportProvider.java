@@ -257,31 +257,12 @@ public class StdioServerTransportProvider implements McpServerTransportProvider 
           try {
             reader = new BufferedReader(new InputStreamReader(inputStream));
             while (!isClosing.get()) {
-              try {
-                String line = reader.readLine();
-                if (line == null || isClosing.get()) {
-                  break;
-                }
-
-                logger.debug("Received JSON message: {}", line);
-
-                try {
-                  McpSchema.JSONRPCMessage message = McpSchema.deserializeJsonRpcMessage(jsonMapper,
-                    line);
-                  if (!this.inboundSink.tryEmitNext(message).isSuccess()) {
-                    // logIfNotClosing("Failed to enqueue message");
-                    break;
-                  }
-
-                } catch (Exception e) {
-                  logIfNotClosing("Error processing inbound message", e);
-                  break;
-                }
-              } catch (IOException e) {
-                logIfNotClosing("Error reading from stdin", e);
+              if (!readAndProcessLine(reader)) {
                 break;
               }
             }
+          } catch (IOException e) {
+            logIfNotClosing("Error reading from stdin", e);
           } catch (Exception e) {
             logIfNotClosing("Error in inbound processing", e);
           } finally {
@@ -309,6 +290,32 @@ public class StdioServerTransportProvider implements McpServerTransportProvider 
           }
         });
       }
+    }
+
+    private boolean readAndProcessLine(BufferedReader reader) throws IOException {
+      String line = reader.readLine();
+      if (line == null || isClosing.get()) {
+        return false;
+      }
+
+      logger.debug("Received JSON message: {}", line);
+
+      return processMessage(line);
+    }
+
+    private boolean processMessage(String line) {
+      try {
+        McpSchema.JSONRPCMessage message = McpSchema.deserializeJsonRpcMessage(jsonMapper,
+          line);
+        if (!this.inboundSink.tryEmitNext(message).isSuccess()) {
+          // logIfNotClosing("Failed to enqueue message");
+          return false;
+        }
+      } catch (Exception e) {
+        logIfNotClosing("Error processing inbound message", e);
+        return false;
+      }
+      return true;
     }
 
     /**

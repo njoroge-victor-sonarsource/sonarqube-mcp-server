@@ -14,12 +14,18 @@
  * You should have received a copy of the Sonar Source-Available License
  * along with this program; if not, see https://sonarsource.com/license/ssal/
  */
-package org.sonarsource.sonarqube.mcp.serverapi.exception;
+package org.sonarsource.sonarqube.mcp.transport;
 
-public class ForbiddenException extends RuntimeException {
+import java.util.List;
 
-  public ForbiddenException(String message) {
-    super("SonarQube answered with " + message);
-  }
-
+/**
+ * Groups server binding and general configuration parameters for the HTTP server transport.
+ */
+public record ServerConfiguration(
+  int port,
+  String host,
+  List<String> allowedOrigins,
+  String appVersion,
+  boolean isRunningInContainer
+) {
 }

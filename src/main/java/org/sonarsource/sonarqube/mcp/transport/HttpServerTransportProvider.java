@@ -46,6 +46,8 @@ import org.sonarsource.sonarqube.mcp.log.McpLogger;
 import org.sonarsource.sonarqube.mcp.tools.Tool;
 import reactor.core.publisher.Mono;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  * HTTP transport for the MCP server using the stateless servlet transport.
  * Each POST request is handled independently — no session state is maintained,
@@ -60,21 +62,12 @@ public class HttpServerTransportProvider {
   public static final String CONTEXT_TOOLSETS_KEY = "sonarqube-toolsets";
   public static final String CONTEXT_READ_ONLY_KEY = "sonarqube-read-only";
 
-  private final int port;
-  private final String host;
+  private final ServerConfiguration serverConfig;
   private final AuthMode authMode;
   private final boolean isSonarQubeCloud;
   @Nullable
   private final String serverOrg;
-  private final boolean httpsEnabled;
-  private final Path httpsKeystorePath;
-  private final String httpsKeystorePassword;
-  private final String httpsKeystoreType;
-  private final Path httpsTruststorePath;
-  private final String httpsTruststorePassword;
-  private final String httpsTruststoreType;
-  private final List<String> allowedOrigins;
-  private final String appVersion;
+  private final HttpsConfiguration httpsConfig;
   private final HttpServletStatelessServerTransport mcpTransportProvider;
   private Server httpServer;
 
@@ -97,24 +90,13 @@ public class HttpServerTransportProvider {
    * @param appVersion The version of the MCP server
    * @param isRunningInContainer Whether the server is running inside a container (suppresses the 0.0.0.0 security warning)
    */
-  public HttpServerTransportProvider(int port, String host, AuthMode authMode, boolean isSonarQubeCloud, @Nullable String serverOrg,
-    boolean httpsEnabled, Path httpsKeystorePath, String httpsKeystorePassword, String httpsKeystoreType,
-    Path httpsTruststorePath, String httpsTruststorePassword, String httpsTruststoreType,
-    List<String> allowedOrigins, String appVersion, boolean isRunningInContainer) {
-    this.port = port;
-    this.host = host;
+  public HttpServerTransportProvider(ServerConfiguration serverConfig, AuthMode authMode, boolean isSonarQubeCloud,
+    @Nullable String serverOrg, HttpsConfiguration httpsConfig) {
+    this.serverConfig = requireNonNull(serverConfig);
     this.authMode = authMode;
     this.isSonarQubeCloud = isSonarQubeCloud;
     this.serverOrg = serverOrg;
-    this.httpsEnabled = httpsEnabled;
-    this.httpsKeystorePath = httpsKeystorePath;
-    this.httpsKeystorePassword = httpsKeystorePassword;
-    this.httpsKeystoreType = httpsKeystoreType;
-    this.httpsTruststorePath = httpsTruststorePath;
-    this.httpsTruststorePassword = httpsTruststorePassword;
-    this.httpsTruststoreType = httpsTruststoreType;
-    this.allowedOrigins = List.copyOf(allowedOrigins);
-    this.appVersion = appVersion;
+    this.httpsConfig = requireNonNull(httpsConfig);
 
     this.mcpTransportProvider = HttpServletStatelessServerTransport.builder()
       .messageEndpoint(MCP_ENDPOINT)
@@ -147,21 +129,21 @@ public class HttpServerTransportProvider {
       })
       .build();
 
-    var protocol = httpsEnabled ? "https" : "http";
+    var protocol = httpsConfig.enabled() ? "https" : "http";
     LOG.info("Created " + protocol.toUpperCase(Locale.getDefault()) + " transport provider for "
-      + protocol + "://" + host + ":" + port + MCP_ENDPOINT + " with authentication: " + authMode);
+      + protocol + "://" + serverConfig.host() + ":" + serverConfig.port() + MCP_ENDPOINT + " with authentication: " + authMode);
 
     // Warn about security risk when binding to all interfaces outside a container.
     // In containers, 0.0.0.0 is required for port mapping to work; the host-side flag controls exposure.
     // Outside a container (e.g. JAR), 0.0.0.0 exposes the server on all host interfaces and enables DNS rebinding attacks.
-    if ("0.0.0.0".equals(host) && !isRunningInContainer) {
+    if ("0.0.0.0".equals(serverConfig.host()) && !serverConfig.isRunningInContainer()) {
       LOG.warn("SECURITY WARNING: MCP HTTP server is configured to bind to all network interfaces (0.0.0.0). " +
         "This exposes the server to your entire network and is susceptible to DNS rebinding attacks. " +
         "For local use, consider using 127.0.0.1 instead.");
     }
 
     // Warn about HTTP without HTTPS
-    if (!httpsEnabled) {
+    if (!httpsConfig.enabled()) {
       LOG.warn("SECURITY WARNING: MCP server is using HTTP without SSL/TLS encryption. " +
         "Tokens and data will be transmitted in plain text. " +
         "For production use, consider enabling HTTPS with SONARQUBE_TRANSPORT=https.");
@@ -200,7 +182,7 @@ public class HttpServerTransportProvider {
    */
   public CompletableFuture<Void> startServer() {
     if (httpServer != null && httpServer.isRunning()) {
-      LOG.warn("HTTP server is already running on " + host + ":" + port);
+      LOG.warn("HTTP server is already running on " + serverConfig.host() + ":" + serverConfig.port());
       return CompletableFuture.completedFuture(null);
     }
 
@@ -212,7 +194,7 @@ public class HttpServerTransportProvider {
     var errorFilter = new FilterHolder(new ErrorHandlingFilter());
     servletContextHandler.addFilter(errorFilter, "/*", EnumSet.of(DispatcherType.REQUEST));
 
-    var securityFilter = new FilterHolder(new McpSecurityFilter(host, allowedOrigins, appVersion));
+    var securityFilter = new FilterHolder(new McpSecurityFilter(serverConfig.host(), serverConfig.allowedOrigins(), serverConfig.appVersion()));
     servletContextHandler.addFilter(securityFilter, "/*", EnumSet.of(DispatcherType.REQUEST));
 
     var authFilter = new FilterHolder(new AuthenticationFilter(authMode, isSonarQubeCloud, serverOrg));
@@ -226,11 +208,11 @@ public class HttpServerTransportProvider {
     httpServer = new Server();
     ServerConnector connector;
 
-    if (httpsEnabled) {
+    if (httpsConfig.enabled()) {
       // Configure HTTPS with SSL/TLS
       var sslContextFactory = new SslContextFactory.Server();
-      var sslContext = configureSsl(httpsKeystorePath, httpsKeystorePassword, httpsKeystoreType,
-        httpsTruststorePath, httpsTruststorePassword, httpsTruststoreType);
+      var sslContext = configureSsl(httpsConfig.keystorePath(), httpsConfig.keystorePassword(), httpsConfig.keystoreType(),
+        httpsConfig.truststorePath(), httpsConfig.truststorePassword(), httpsConfig.truststoreType());
       sslContextFactory.setSslContext(sslContext);
       connector = new ServerConnector(httpServer, sslContextFactory);
     } else {
@@ -238,16 +220,16 @@ public class HttpServerTransportProvider {
       connector = new ServerConnector(httpServer);
     }
 
-    connector.setHost(host);
-    connector.setPort(port);
+    connector.setHost(serverConfig.host());
+    connector.setPort(serverConfig.port());
     httpServer.addConnector(connector);
     httpServer.setHandler(servletContextHandler);
 
     CompletableFuture.runAsync(() -> {
       try {
         httpServer.start();
-        var protocol = httpsEnabled ? "https" : "http";
-        LOG.info("MCP " + protocol.toUpperCase(Locale.getDefault()) + " server started successfully on " + protocol + "://" + host + ":" + port + MCP_ENDPOINT);
+        var protocol = httpsConfig.enabled() ? "https" : "http";
+        LOG.info("MCP " + protocol.toUpperCase(Locale.getDefault()) + " server started successfully on " + protocol + "://" + serverConfig.host() + ":" + serverConfig.port() + MCP_ENDPOINT);
         startupFuture.complete(null);
         httpServer.join();
       } catch (InterruptedException e) {
@@ -287,8 +269,8 @@ public class HttpServerTransportProvider {
   }
 
   public String getServerUrl() {
-    var protocol = httpsEnabled ? "https" : "http";
-    return protocol + "://" + host + ":" + port + MCP_ENDPOINT;
+    var protocol = httpsConfig.enabled() ? "https" : "http";
+    return protocol + "://" + serverConfig.host() + ":" + serverConfig.port() + MCP_ENDPOINT;
   }
 
   /**

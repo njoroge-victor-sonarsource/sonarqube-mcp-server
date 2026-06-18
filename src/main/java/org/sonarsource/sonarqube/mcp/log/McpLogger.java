@@ -83,6 +83,7 @@ public class McpLogger {
     logToStderr("ERROR", message);
   }
 
+  @SuppressWarnings("java:S106")
   private static void logToStderr(String level, String message) {
     System.err.println(level + " SonarQube MCP Server - " + message);
   }
