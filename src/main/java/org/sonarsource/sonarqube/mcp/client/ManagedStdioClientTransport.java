@@ -225,11 +225,7 @@ public class ManagedStdioClientTransport implements McpClientTransport {
       try (BufferedReader processErrorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
         String line;
         while (!isClosing && (line = processErrorReader.readLine()) != null) {
-          try {
-            if (!errorSink.tryEmitNext(line).isSuccess()) {
-              break;
-            }
-          } catch (Exception e) {
+          if (!emitError(line)) {
             break;
           }
         }
@@ -242,6 +238,14 @@ public class ManagedStdioClientTransport implements McpClientTransport {
         errorSink.tryEmitComplete();
       }
     });
+  }
+
+  private boolean emitError(String line) {
+    try {
+      return errorSink.tryEmitNext(line).isSuccess();
+    } catch (Exception e) {
+      return false;
+    }
   }
 
   /**

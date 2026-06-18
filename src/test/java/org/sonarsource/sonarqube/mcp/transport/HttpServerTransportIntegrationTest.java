@@ -40,6 +40,8 @@ import org.slf4j.LoggerFactory;
 import org.sonarsource.sonarqube.mcp.authentication.AuthMode;
 import org.sonarsource.sonarqube.mcp.log.McpLogger;
 
+import java.nio.file.Path;
+
 class HttpServerTransportIntegrationTest {
 
   private HttpServerTransportProvider httpServer;
@@ -50,8 +52,10 @@ class HttpServerTransportIntegrationTest {
   @BeforeEach
   void setUp() {
     testPort = findAvailablePort();
-    httpServer = new HttpServerTransportProvider(testPort, "127.0.0.1", AuthMode.TOKEN, false, null, false,
-      Paths.get("keystore.p12"), "sonarlint", "PKCS12", null, null, null, List.of(), "1.0.0", false);
+    httpServer = new HttpServerTransportProvider(
+      new ServerConfiguration(testPort, "127.0.0.1", List.of(), "1.0.0", false),
+      AuthMode.TOKEN, false, null,
+      new HttpsConfiguration(false, Paths.get("keystore.p12"), "sonarlint", "PKCS12", Path.of(""), "", ""));
 
     mcpLogger = (Logger) LoggerFactory.getLogger(McpLogger.class);
     logAppender = new ListAppender<>();
@@ -178,8 +182,10 @@ class HttpServerTransportIntegrationTest {
   @Test
   void should_use_custom_host_and_port() {
     var customPort = findAvailablePort();
-    var customServer = new HttpServerTransportProvider(customPort, "127.0.0.1", AuthMode.TOKEN, false, null, false,
-      Paths.get("keystore.p12"), "sonarlint", "PKCS12", null, null, null, List.of(), "1.0.0", false);
+    var customServer = new HttpServerTransportProvider(
+      new ServerConfiguration(customPort, "127.0.0.1", List.of(), "1.0.0", false),
+      AuthMode.TOKEN, false, null,
+      new HttpsConfiguration(false, Paths.get("keystore.p12"), "sonarlint", "PKCS12", Path.of(""), "", ""));
 
     try {
       customServer.startServer().join();

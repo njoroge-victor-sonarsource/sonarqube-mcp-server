@@ -16,7 +16,7 @@
  */
 package org.sonarsource.sonarqube.mcp.serverapi.exception;
 
-public class ServerApiException extends SonarMcpException {
+public class ServerApiException extends RuntimeException {
 
   public ServerApiException(String message) {
     super("SonarQube answered with " + message);
